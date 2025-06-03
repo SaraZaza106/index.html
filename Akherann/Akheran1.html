@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Tech Quiz</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(to bottom right, #0f2027, #203a43, #2c5364);
+      color: #fff;
+    }
+    .container {
+      max-width: 400px;
+      margin: 30px auto;
+      padding: 20px;
+      background-color: #1e1e2f;
+      border-radius: 20px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    }
+    .logo {
+      display: block;
+      margin: 0 auto 20px;
+      width: 100px;
+      height: auto;
+      border-radius: 12px;
+    }
+    h1, h2, h3 {
+      text-align: center;
+    }
+    input[type="text"], input[type="tel"] {
+      width: 90%;
+      padding: 10px;
+      margin: 10px auto;
+      display: block;
+      border-radius: 10px;
+      border: none;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      display: block;
+      margin: 20px auto;
+      font-size: 16px;
+    }
+    .hidden {
+      display: none;
+    }
+    label {
+      display: block;
+      margin: 10px 0;
+      font-size: 15px;
+    }
+    .timer {
+      text-align: center;
+      font-size: 1.2em;
+      margin-bottom: 10px;
+      color: #ffdd57;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Logo Image -->
+    <img src="OS.logo.png" alt="Tech Quiz Logo" class="logo" />
+
+    <div id="loginPage">
+      <h1>👨‍💻 Welcome to the Tech Quiz 👩‍💻</h1>
+      <input type="text" id="username" placeholder="Enter your name" required />
+      <input type="tel" id="phone" placeholder="Enter your phone number" required />
+      <button onclick="startQuiz()">Start Quiz</button>
+    </div>
+
+    <div id="quizPage" class="hidden">
+      <div class="timer">Time Left: <span id="time">03:00</span></div>
+      <div id="quizContainer"></div>
+      <button id="nextBtn" onclick="nextQuestion()">Next Question</button>
+    </div>
+
+    <div id="resultPage" class="hidden">
+      <h2>🎉 Quiz Result 🎉</h2>
+      <p><strong>Correct:</strong> <span id="correctCount"></span></p>
+      <p><strong>Incorrect:</strong> <span id="wrongCount"></span></p>
+    </div>
+  </div>
+
+  <script>
+    const questions = [
+      { q: "🔌The best 80+ PSU Certification is?", a: ["Gold", "Platinum", "Titanium", "Silver"], correct: 2 },
+      { q: "🖥️ One of the following Resolution is UWQHD?", a: ["2560 x 1440", "1920 x 1080", "3840 x 2160", "3440 x 1440"], correct: 3 },
+      { q: "🧠 The Best processor for AI from the following is?", a: ["Intel Core i9 14900KS", "RTX 5090 32GB GDDR7", "Intel Core Ultra 9 285K", "AMD Ryzen 9 9800X3d"], correct: 2 },
+      { q: "🎮 The Strongest Gaming GPU Currently is?", a: ["5070", "5090", "5070 TI", "5090 Super"], correct: 1 },
+      { q: "🔄 One Of The Following Technologies is not related to Adaptive Sync:", a: ["DLAA", "Free Sync", "G Sync", "B+C"], correct: 0 },
+      { q: "📦 The latest and the most modern VRAM is?", a: ["DDR5", "LPDDR6", "LPDDR5x", "GDDR7"], correct: 3 },
+      { q: "🖥️ One of the following Samsung Monitors is compatible with VRR on PS5 :", a: ["Samsung Odyssey G6", "Samsung Odyssey G3", "Samsung Odyssey G5", "Samsung Odyssey S3"], correct: 0 },
+      { q: "🔧 One of the following Chipsets is Incompatible with AMD Ryzen 5 8600G:", a: ["A620", "B840", "B550", "X670"], correct: 2 },
+      { q: "💾 The RAM Channel on Z790 with 4 sticks will work as:", a: ["Quad Channel", "Triple Channel", "Dual Channel", "Single Channel"], correct: 2 },
+      { q: "🧮 One of the following processors does not have iGPU:", a: ["7800x3d", "14900k", "5700X", "A+B"], correct: 2 },
+      { q: "🎛️ To Enable DLDSR technology you should enable it from:", a: ["Nvidia Control Panel", "Amd Ryzen Master", "AMD Adrenaline", "Intel Extreme utility"], correct: 0 },
+      { q: "🔍 The Weakest gaming Processor from the following is :", a: ["i5-13400KF", "i7-12700", "i5-14600KF", "i9-9900K"], correct: 3 },
+      { q: "💡 One of the following setup is Not compatible :?", a: ["RTX 5090, Z690, i7 14700KF", "Ryzen 9 9900X, X870E, 256GB DDR5", "RTX 5080, Z790, Ultra 7 265KF", "7900 XTX, 1000W PSU, 7800X3D"], correct: 2 },
+      { q: "🏷️ One of the following products is Not from Oriental Store Brands?", a: ["Alphacool", "Astro", "Aerocool", "Hyte"], correct: 0 },
+      { q: "🧩 One Of the following Motherboards will be compatible with AMD Ryzen 7 7700:?", a: ["ASUS TUF X570 PLUS WIFI", "GIGABYTE B860 GAMING X WIFI6E", "MSI B840 GAMING PLUS WIFI", "ASROCK A520M PRO"], correct: 2 }
+    ];
+
+    let currentQuestion = 0;
+    let answers = [];
+    let timer;
+    let timeLeft = 180;
+
+    // Prevent retake using localStorage
+    window.onload = function() {
+      if (localStorage.getItem("quizTaken")) {
+        document.getElementById("loginPage").innerHTML = `
+          <h2>🚫 You have already taken the quiz.</h2>
+          <p>Retaking the quiz is not allowed.</p>
+        `;
+      }
+    };
+
+    function startQuiz() {
+      const username = document.getElementById("username").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+
+      if (!username || !phone.match(/^\d{10}$/)) {
+        alert("Please enter a valid name and 10-digit phone number.");
+        return;
+      }
+
+      // Block quiz if already taken
+      if (localStorage.getItem("quizTaken")) {
+        alert("You have already taken the quiz. Retaking is not allowed.");
+        return;
+      }
+
+      document.getElementById("loginPage").classList.add("hidden");
+      document.getElementById("quizPage").classList.remove("hidden");
+      displayQuestion();
+      timer = setInterval(updateTimer, 1000);
+    }
+
+    function updateTimer() {
+      if (timeLeft <= 0) {
+        clearInterval(timer);
+        submitQuiz();
+        return;
+      }
+      timeLeft--;
+      const minutes = Math.floor(timeLeft / 60);
+      const seconds = timeLeft % 60;
+      document.getElementById("time").textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    function displayQuestion() {
+      const q = questions[currentQuestion];
+      const quizContainer = document.getElementById("quizContainer");
+      quizContainer.innerHTML = `<div class="question">
+        <h3>Q${currentQuestion + 1}/${questions.length}: ${q.q}</h3>
+        ${q.a.map((option, index) => `
+          <label>
+            <input type="radio" name="question" value="${index}" ${answers[currentQuestion] === index ? "checked" : ""}>
+            ${String.fromCharCode(65 + index)}) ${option}
+          </label>`).join("")}
+      </div>`;
+    }
+
+    function nextQuestion() {
+      const selected = document.querySelector('input[name="question"]:checked');
+      if (!selected) {
+        alert("Please select an answer.");
+        return;
+      }
+
+      answers[currentQuestion] = parseInt(selected.value);
+      currentQuestion++;
+
+      if (currentQuestion >= questions.length) {
+        submitQuiz();
+      } else {
+        displayQuestion();
+      }
+    }
+
+    function submitQuiz() {
+      clearInterval(timer);
+      let correct = 0;
+      questions.forEach((q, i) => {
+        if (answers[i] === q.correct) correct++;
+      });
+
+      const wrong = questions.length - correct;
+      document.getElementById("quizPage").classList.add("hidden");
+      document.getElementById("resultPage").classList.remove("hidden");
+      document.getElementById("correctCount").textContent = correct;
+      document.getElementById("wrongCount").textContent = wrong;
+
+      localStorage.setItem("quizTaken", "true");
+    }
+
+    // 🚫 Prevent tab switching or minimize
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden && !document.getElementById("resultPage").classList.contains("hidden")) return;
+      if (document.hidden) {
+        alert("You switched tabs or minimized the browser. The quiz will now be submitted.");
+        submitQuiz();
+      }
+    });
+
+    // 🚫 Prevent F5 and Ctrl+R refresh
+    document.addEventListener("keydown", function (e) {
+      if ((e.key === "F5") || (e.ctrlKey && e.key === "r")) {
+        e.preventDefault();
+        alert("Page refresh is disabled during the quiz.");
+      }
+    });
+
+    // 🚫 Prevent closing tab
+    window.addEventListener("beforeunload", function (e) {
+      e.preventDefault();
+      e.returnValue = "";
+    });
+  </script>
+</body>
+</html>
